@@ -21,6 +21,7 @@ app.use(nocache);
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/notifications", require("./routes/notification.routes"));
 app.use("/api/users", require("./routes/users.routes"));
+app.use("/api/meeting", require("./routes/rooms.routes"));
 app.use("/api/sessions", require("./routes/sessions.routes"));
 app.get("/ping", (req, res) => res.json({ message: "server is fine" }));
 

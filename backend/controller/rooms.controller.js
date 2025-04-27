@@ -1,12 +1,13 @@
 const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
 const Room = require("../models/Room.model");
-const joinRoom = async(req, res) => {
+const User = require("../models/Users.model");
+const joinRoom = async (req, res) => {
   const { roomId } = req.params;
   const { uid, role } = req.body; // role = 'host' or 'student'
   try {
-    const exists=await Room.findOne({roomId})
-    if(!exists){
-      return res.status(404).json({message:'Room not found'})
+    const exists = await Room.findOne({ roomId });
+    if (!exists) {
+      return res.status(404).json({ message: "Room not found" });
     }
     const appId = process.env.AGORA_APP_ID;
     const appCertificate = process.env.AGORA_APP_CERTIFICATE;
@@ -25,20 +26,81 @@ const joinRoom = async(req, res) => {
       privilegeExpiredTs
     );
 
-    res.json({ token, appId, channelName: roomId, uid });
+    res.status(200).json({ token, appId, channelName: roomId, uid });
   } catch (error) {
-    res.status(500).json({message:'Internal server error'})
+    console.log(error)
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
 const createRoom = async (req, res) => {
-  const { hostId, topic, time, limit } = req.body;
+  const {
+    hostId,
+    meetingType,
+    invitedStudents,
+    enableInvites,
+    title,
+    password,
+    dateTime,
+    limit,
+  } = req.body;
   try {
-    const resposnse = await Room.create({ hostId, topic, time, limit });
+    console.log({
+      meetingType,
+      invitedStudents,
+      enableInvites,
+      title,
+      password,
+      dateTime,
+      limit,
+    });
+    const resposnse = await Room.create({
+      hostId,
+      enableInvites,
+      invitedStudents,
+      meetingType,
+      password,
+      dateTime,
+      topic: title,
+      limit,
+    });
+    const updateUser = await User.findByIdAndUpdate(
+      hostId,
+      { $push: { rooms: resposnse._id } },
+      { new: true }
+    );
     res.status(201).json(resposnse);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-module.exports = { joinRoom };
+const getRooms = async (req, res) => {
+  const { roomId } = req.params;
+  console.log(roomId);
+  try {
+    const room = await Room.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+    res.status(200).json(room);
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+const getAllRooms = async (req, res) => {
+  try {
+    const rooms = await Room.find({});
+    if (!rooms) {
+      return res.status(404).json({ message: "No rooms found" });
+    }
+    console.log(rooms)
+    res.status(200).json(rooms);
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+module.exports = { joinRoom, createRoom, getRooms, getAllRooms };
