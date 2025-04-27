@@ -1,10 +1,10 @@
-const User = require('../models/User');
+const User = require('../models/Users.model');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { deleteOnCloudinary, uploadOnCloudinary } = require('../utils/cloudinary');
 
 exports.registerUser = async (req, res) => {
-  const { email, password, confirmpassword, firstname, lastname } = req.body;
+  const { email, password, confirmpassword, firstname, lastname, contactnumber } = req.body;
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -19,10 +19,12 @@ exports.registerUser = async (req, res) => {
     const newUser = new User({
       username,
       email,
-      firstname,
-      lastname,
+      name:firstname+" "+lastname,
       password: hashedPassword,
       bio: "",
+      contactNumber:contactnumber,
+      profileUrl: "https://loremfaces.net/24/id/1.jpg",
+      public_id: "",
     });
 
     const savedUser = await newUser.save();
@@ -181,51 +183,3 @@ exports.linkAccounts = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while linking accounts' });
   }
 };
-
-
-exports.unlinkAccount = async (req, res) => {
-  const { _id, platform } = req.query; // Extract user ID and platform from query params
-
-  // Map of platforms to database fields
-  const validPlatforms = {
-    leetcode: 'lcUsername',
-    codeforces: 'cfUsername',
-    gfg: 'gfgUsername',
-    codechef: 'ccUsername',
-    hackerrank: 'hrUsername',
-    github: 'githubUsername',
-    codingninjas: 'cnUsername',
-  };
-
-  // Get the field to clear based on the platform
-  const fieldToClear = validPlatforms[platform?.toLowerCase()];
-
-  // Validate platform
-  if (!fieldToClear) {
-    return res.status(400).json({ error: 'Invalid platform specified' });
-  }
-
-  try {
-    // Update the user's account details by setting the field to null
-    const updatedUser = await User.findByIdAndUpdate(
-      _id,
-      { [fieldToClear]: null }, // Clear the specific platform field
-      { new: true } // Return the updated document
-    );
-
-    // Handle case where user is not found
-    if (!updatedUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Respond with the updated user
-    res.status(200).json({
-      message: `${platform} account unlinked successfully!`,
-      updatedUser,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred while unlinking the account' });
-  }
-};
-
