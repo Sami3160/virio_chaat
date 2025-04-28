@@ -5,7 +5,8 @@ const joinRoom = async (req, res) => {
   const { roomId } = req.params;
   const { uid, role } = req.body; // role = 'host' or 'student'
   try {
-    const exists = await Room.findOne({ roomId });
+    console.log({roomId, uid, role})
+    const exists = await Room.findOne({_id: roomId });
     if (!exists) {
       return res.status(404).json({ message: "Room not found" });
     }
@@ -92,7 +93,7 @@ const getRooms = async (req, res) => {
 };
 const getAllRooms = async (req, res) => {
   try {
-    const rooms = await Room.find({});
+    const rooms = await Room.find({}).populate("hostId", "name");
     if (!rooms) {
       return res.status(404).json({ message: "No rooms found" });
     }
